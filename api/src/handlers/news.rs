@@ -37,27 +37,40 @@ pub async fn get_today_disclosure() -> Result<String, StatusCode> {
     ];
     let html = read_post_html(DISCLOSURE_URL, &params, client).await;
     html.map(|doc| {
-        doc.find(Name("table").descendant(Name("tr")))
-            .map(|node| {
-                node.find(Name("td"))
-                    .map(|td| {
-                        let table_data = node_to_text(td);
-                        let spans = td
-                            .find(Name("span"))
-                            .map(node_to_text)
-                            .collect::<Vec<_>>()
-                            .join("/");
-                        if spans.len() > 0 {
-                            spans
-                        } else {
-                            table_data
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join("  |  ")
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
+        if let Some(table) = doc.find(Name("table")).next() {
+            let table_header = table
+                .find(Name("th"))
+                .map(node_to_text)
+                .collect::<Vec<_>>()
+                .join(" | ");
+
+            let table_rows = table
+                .find(Name("tr"))
+                .map(|node| {
+                    node.find(Name("td"))
+                        .map(|td| {
+                            let table_data = node_to_text(td);
+                            let spans = td
+                                .find(Name("span"))
+                                .map(node_to_text)
+                                .collect::<Vec<_>>()
+                                .join("/");
+                            if spans.len() > 0 {
+                                spans
+                            } else {
+                                table_data
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" | ")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            format!("{}\n{}", table_header, table_rows)
+        } else {
+            String::from("TABLE NOT FOUND")
+        }
     })
 }
 
@@ -73,8 +86,11 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
     let html = read_html(&url(0, 1)).await;
     html.map(|doc| {
         if let Some(table) = doc.find(Name("table")).nth(1) {
+            let table_header_list = table.find(Name("th"));
+            let cols = table_header_list.count();
             let table_header = table
                 .find(Name("th"))
+                .take(cols - 1) // The last column is useless
                 .map(node_to_text)
                 .collect::<Vec<_>>()
                 .join(" | ");
@@ -83,6 +99,7 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
                 .find(Name("tr"))
                 .map(|tr| {
                     tr.find(Name("td"))
+                        .take(cols - 1) // The last column is useless
                         .map(|node| node_to_text(node).trim_matches('\n').to_string())
                         .collect::<Vec<_>>()
                         .join(" | ")
