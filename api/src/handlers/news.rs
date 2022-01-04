@@ -1,4 +1,5 @@
 use crate::utils::{node_to_text, read_html, read_post_html};
+use itertools::Itertools;
 use reqwest::StatusCode;
 use select::predicate::{Class, Name, Predicate};
 
@@ -88,12 +89,21 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
         if let Some(table) = doc.find(Name("table")).nth(1) {
             let table_header_list = table.find(Name("th"));
             let cols = table_header_list.count();
-            let table_header = table
-                .find(Name("th"))
-                .take(cols - 1) // The last column is useless
-                .map(node_to_text)
-                .collect::<Vec<_>>()
-                .join(" | ");
+            let table_header = format!(
+                "{} | {}",
+                table
+                    .find(Name("th"))
+                    .take(cols - 1) // The last column is useless
+                    .map(node_to_text)
+                    .collect::<Vec<_>>()
+                    .join(" | "),
+                "종목코드"
+            );
+
+            let mut codes = table
+                .find(Name("tbody").descendant(Name("td")).descendant(Name("a")))
+                .filter_map(|a| a.attr("href").and_then(|href| href.split("code=").last()))
+                .unique();
 
             let table_rows = table
                 .find(Name("tr"))
@@ -105,6 +115,7 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
                         .join(" | ")
                 })
                 .filter(|tr| tr.len() > 0)
+                .map(|tr| format!("{} | {}", tr, codes.next().unwrap_or("NA")))
                 .collect::<Vec<_>>()
                 .join("\n");
 

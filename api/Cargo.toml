@@ -8,6 +8,7 @@ version = "0.1.0"
 [dependencies]
 async-graphql = "^3.0.0"
 axum = "^0.4.3"
+itertools = "0.10.3"
 reqwest = "0.11.8"
 select = "0.5.0"
 slab = "0.4.5"
