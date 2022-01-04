@@ -1,4 +1,5 @@
-use reqwest::{Client, StatusCode};
+use axum::http::HeaderMap;
+use reqwest::{header::HeaderName, Client, StatusCode};
 use select::{document::Document, node::Node};
 
 pub fn node_to_text(node: Node) -> String {
@@ -15,6 +16,20 @@ pub async fn read_html(url: &str) -> Result<Document, StatusCode> {
     Err(StatusCode::NOT_FOUND)
 }
 
+pub async fn read_post_html(
+    url: &str,
+    params: &[(&str, &str)],
+    headers: HeaderMap,
+    client: &Client,
+) -> Result<Document, StatusCode> {
+    if let Ok(res) = client.post(url).form(params).headers(headers).send().await {
+        if let Ok(ref text) = res.text().await {
+            return Document::from_read(&mut text.as_bytes()).map_err(|_| StatusCode::NOT_FOUND);
+        }
+    }
+    Err(StatusCode::NOT_FOUND)
+}
+
 pub async fn read_raw_html(url: &str) -> Result<String, StatusCode> {
     if let Ok(res) = reqwest::get(url).await {
         if let Ok(ref text) = res.text().await {
@@ -24,14 +39,15 @@ pub async fn read_raw_html(url: &str) -> Result<String, StatusCode> {
     Err(StatusCode::NOT_FOUND)
 }
 
-pub async fn read_post_html(
+pub async fn read_post_raw(
     url: &str,
     params: &[(&str, &str)],
-    client: Client,
-) -> Result<Document, StatusCode> {
-    if let Ok(res) = client.post(url).form(params).send().await {
+    headers: HeaderMap,
+    client: &Client,
+) -> Result<String, StatusCode> {
+    if let Ok(res) = client.post(url).form(params).headers(headers).send().await {
         if let Ok(ref text) = res.text().await {
-            return Document::from_read(&mut text.as_bytes()).map_err(|_| StatusCode::NOT_FOUND);
+            return Ok(text.into());
         }
     }
     Err(StatusCode::NOT_FOUND)

@@ -9,3 +9,6 @@ http://localhost:3000/disclosure
 
 ### Get ticker 
 http://localhost:3000/ticker
+
+### Get industry 
+http://localhost:3000/industry

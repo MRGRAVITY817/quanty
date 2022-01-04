@@ -1,6 +1,7 @@
-use crate::utils::{node_to_text, read_html, read_post_html};
+use crate::utils::{node_to_text, read_html, read_post_html, read_post_raw};
+use axum::http::{HeaderMap, HeaderValue};
 use itertools::Itertools;
-use reqwest::StatusCode;
+use reqwest::{header::REFERER, StatusCode};
 use select::predicate::{Class, Name, Predicate};
 
 const NEWS_URL: &'static str =
@@ -36,7 +37,8 @@ pub async fn get_today_disclosure() -> Result<String, StatusCode> {
         ("todayFlag", "Y"),
         ("selDate", "2021-12-13"),
     ];
-    let html = read_post_html(DISCLOSURE_URL, &params, client).await;
+    let headers = HeaderMap::new();
+    let html = read_post_html(DISCLOSURE_URL, &params, headers, &client).await;
     html.map(|doc| {
         if let Some(table) = doc.find(Name("table")).next() {
             let table_header = table
@@ -124,4 +126,22 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
             String::from("TABLE NOT FOUND")
         }
     })
+}
+
+const GENERATE_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd";
+const DOWNLOAD_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd";
+pub async fn get_industry() -> Result<String, StatusCode> {
+    let client = reqwest::Client::new();
+    let params = [
+        ("mktId", "STK"),
+        ("trdDd", "20220103"),
+        ("money", "1"),
+        ("csvxls_isNo", "false"),
+        ("name", "fileDown"),
+        ("url", "dbms/MDC/STAT/standard/MDCSTAT03901"),
+    ];
+    let mut headers = HeaderMap::new();
+    headers.insert(REFERER, HeaderValue::from_static(GENERATE_URL));
+    let download_code = read_post_raw(GENERATE_URL, &params, HeaderMap::new(), &client).await?;
+    read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await
 }
