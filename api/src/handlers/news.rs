@@ -61,17 +61,39 @@ pub async fn get_today_disclosure() -> Result<String, StatusCode> {
     })
 }
 
-const KOSPI_MARKET_SUM_URL: &'static str =
-    "https://finance.naver.com/sise/sise_market_sum.nhn?sosok=0&page=1";
-const KOSDAQ_MARKET_SUM_URL: &'static str =
-    "https://finance.naver.com/sise/sise_market_sum.nhn?sosok=1&page=1";
-
+// Get market sum data from Naver finance
 pub async fn get_ticker() -> Result<String, StatusCode> {
-    let html = read_html(KOSPI_MARKET_SUM_URL).await;
+    let url = |category: u8, page: u32| {
+        format!(
+            "https://finance.naver.com/sise/sise_market_sum.nhn?sosok={}&page={}",
+            category, page
+        )
+    };
+
+    let html = read_html(&url(0, 1)).await;
     html.map(|doc| {
-        doc.find(Class("pgRR").descendant(Name("a")))
-            .filter_map(|a| a.attr("href"))
-            .collect::<Vec<_>>()
-            .join("\n")
+        if let Some(table) = doc.find(Name("table")).nth(1) {
+            let table_header = table
+                .find(Name("th"))
+                .map(node_to_text)
+                .collect::<Vec<_>>()
+                .join(" | ");
+
+            let table_rows = table
+                .find(Name("tr"))
+                .map(|tr| {
+                    tr.find(Name("td"))
+                        .map(|node| node_to_text(node).trim_matches('\n').to_string())
+                        .collect::<Vec<_>>()
+                        .join(" | ")
+                })
+                .filter(|tr| tr.len() > 0)
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            format!("{}\n{}", table_header, table_rows)
+        } else {
+            String::from("TABLE NOT FOUND")
+        }
     })
 }

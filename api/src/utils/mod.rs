@@ -15,6 +15,15 @@ pub async fn read_html(url: &str) -> Result<Document, StatusCode> {
     Err(StatusCode::NOT_FOUND)
 }
 
+pub async fn read_raw_html(url: &str) -> Result<String, StatusCode> {
+    if let Ok(res) = reqwest::get(url).await {
+        if let Ok(ref text) = res.text().await {
+            return Ok(text.into());
+        }
+    }
+    Err(StatusCode::NOT_FOUND)
+}
+
 pub async fn read_post_html(
     url: &str,
     params: &[(&str, &str)],
