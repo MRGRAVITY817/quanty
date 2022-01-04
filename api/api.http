@@ -6,3 +6,6 @@ http://localhost:3000/news
 
 ### Get today's disclosure
 http://localhost:3000/disclosure
+
+### Get ticker 
+http://localhost:3000/ticker

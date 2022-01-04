@@ -11,7 +11,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(get_hello))
         .route("/news", get(news::get_financial_news))
-        .route("/disclosure", get(news::get_today_disclosure));
+        .route("/disclosure", get(news::get_today_disclosure))
+        .route("/ticker", get(news::get_ticker));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!("listening on {}", addr);
