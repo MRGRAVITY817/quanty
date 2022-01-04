@@ -1,0 +1,8 @@
+### Index page
+http://localhost:3000
+
+### Get financial news
+http://localhost:3000/news
+
+### Get today's disclosure
+http://localhost:3000/disclosure

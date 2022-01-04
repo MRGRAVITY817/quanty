@@ -1,4 +1,7 @@
 mod handlers;
+mod utils;
+
+use handlers::news;
 use std::net::SocketAddr;
 
 use axum::{response::Html, routing::get, Router};
@@ -7,7 +10,8 @@ use axum::{response::Html, routing::get, Router};
 async fn main() {
     let app = Router::new()
         .route("/", get(get_hello))
-        .route("/news", get(handlers::news::get_news));
+        .route("/news", get(news::get_financial_news))
+        .route("/disclosure", get(news::get_today_disclosure));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!("listening on {}", addr);
