@@ -1,7 +1,13 @@
-use crate::utils::{node_to_text, read_html, read_post_html, read_post_raw};
-use axum::http::{HeaderMap, HeaderValue};
+use crate::utils::{
+    read::{node_to_text, read_html, read_post_html, read_post_raw},
+    write::write_csv,
+};
+use axum::{
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::IntoResponse,
+};
 use itertools::Itertools;
-use reqwest::{header::REFERER, StatusCode};
+use reqwest::header::REFERER;
 use select::predicate::{Class, Name, Predicate};
 
 const NEWS_URL: &'static str =
@@ -9,7 +15,7 @@ const NEWS_URL: &'static str =
 const DISCLOSURE_URL: &'static str = "https://kind.krx.co.kr/disclosure/todaydisclosure.do";
 
 /// Get news from Naver Finance
-pub async fn get_financial_news() -> Result<String, StatusCode> {
+pub async fn get_financial_news() -> impl IntoResponse {
     let html = read_html(NEWS_URL).await;
     html.map(|doc| {
         doc.find(
@@ -24,7 +30,7 @@ pub async fn get_financial_news() -> Result<String, StatusCode> {
 }
 
 /// Get today's disclosure from kind.krx
-pub async fn get_today_disclosure() -> Result<String, StatusCode> {
+pub async fn get_today_disclosure() -> impl IntoResponse {
     let client = reqwest::Client::new();
     let params = [
         ("method", "searchTodayDisclosureSub"),
@@ -78,7 +84,7 @@ pub async fn get_today_disclosure() -> Result<String, StatusCode> {
 }
 
 // Get market sum data from Naver finance
-pub async fn get_ticker() -> Result<String, StatusCode> {
+pub async fn get_ticker() -> impl IntoResponse {
     let url = |category: u8, page: u32| {
         format!(
             "https://finance.naver.com/sise/sise_market_sum.nhn?sosok={}&page={}",
@@ -130,7 +136,9 @@ pub async fn get_ticker() -> Result<String, StatusCode> {
 
 const GENERATE_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd";
 const DOWNLOAD_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd";
-pub async fn get_industry() -> Result<String, StatusCode> {
+
+/// Get industry data
+pub async fn get_industry() -> impl IntoResponse {
     let client = reqwest::Client::new();
     let params = [
         ("mktId", "STK"),
@@ -140,8 +148,13 @@ pub async fn get_industry() -> Result<String, StatusCode> {
         ("name", "fileDown"),
         ("url", "dbms/MDC/STAT/standard/MDCSTAT03901"),
     ];
+
     let mut headers = HeaderMap::new();
     headers.insert(REFERER, HeaderValue::from_static(GENERATE_URL));
+
     let download_code = read_post_raw(GENERATE_URL, &params, HeaderMap::new(), &client).await?;
-    read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await
+    let csv_result =
+        read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await?;
+    // FIXME: This stops when the column length changes.
+    write_csv("./test.csv", &csv_result)
 }
