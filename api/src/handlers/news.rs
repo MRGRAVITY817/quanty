@@ -137,8 +137,8 @@ pub async fn get_ticker() -> impl IntoResponse {
 const GENERATE_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd";
 const DOWNLOAD_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd";
 
-/// Get industry data
-pub async fn get_industry() -> impl IntoResponse {
+/// Get sector data from KRX
+pub async fn get_krx_sector() -> impl IntoResponse {
     let client = reqwest::Client::new();
     let params = [
         ("mktId", "STK"),
@@ -156,5 +156,25 @@ pub async fn get_industry() -> impl IntoResponse {
     let csv_result =
         read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await?;
     // FIXME: This stops when the column length changes.
-    write_csv("./test.csv", &csv_result)
+    write_csv("./krx_sec.csv", &csv_result)
+}
+
+/// Get PER, PBR and Dividend Yield Ratio for each individual company
+pub async fn get_krx_ind() -> impl IntoResponse {
+    let client = reqwest::Client::new();
+    let params = [
+        ("searchType", "1"),
+        ("mktId", "ALL"),
+        ("trdDd", "20220105"),
+        ("csvxls_isNo", "false"),
+        ("name", "fileDown"),
+        ("url", "dbms/MDC/STAT/standard/MDCSTAT03501"),
+    ];
+    let mut headers = HeaderMap::new();
+    headers.insert(REFERER, HeaderValue::from_static(GENERATE_URL));
+    let download_code = read_post_raw(GENERATE_URL, &params, HeaderMap::new(), &client).await?;
+    let csv_result =
+        read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await?;
+    // FIXME: This stops when the column length changes.
+    write_csv("./krx_ind.csv", &csv_result)
 }

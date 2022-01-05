@@ -12,3 +12,6 @@ http://localhost:3000/ticker
 
 ### Get industry 
 http://localhost:3000/industry
+
+### Get individual field
+http://localhost:3000/individual

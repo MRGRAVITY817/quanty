@@ -3,7 +3,6 @@ use csv::Writer;
 
 pub fn write_csv(path: &str, data: &str) -> Result<String, StatusCode> {
     if let Ok(mut writer) = Writer::from_path(path) {
-        println!("Now write...");
         let line_wr: Result<(), csv::Error> = data
             .split("\n")
             .map(|line| writer.write_record(line.split(",")))
@@ -11,7 +10,6 @@ pub fn write_csv(path: &str, data: &str) -> Result<String, StatusCode> {
             .into_iter()
             .collect();
 
-        println!("line write stat: {:?}", line_wr);
         if let Ok(()) = line_wr {
             return writer
                 .flush()

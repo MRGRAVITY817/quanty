@@ -13,7 +13,8 @@ async fn main() {
         .route("/news", get(news::get_financial_news))
         .route("/disclosure", get(news::get_today_disclosure))
         .route("/ticker", get(news::get_ticker))
-        .route("/industry", get(news::get_industry));
+        .route("/industry", get(news::get_krx_sector))
+        .route("/individual", get(news::get_krx_ind));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!("listening on {}", addr);
