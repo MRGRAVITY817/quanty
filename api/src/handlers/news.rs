@@ -140,6 +140,7 @@ const DOWNLOAD_URL: &'static str = "http://data.krx.co.kr/comm/fileDn/download_c
 /// Get sector data from KRX
 pub async fn get_krx_sector() -> impl IntoResponse {
     let client = reqwest::Client::new();
+    // TODO: Should crawl both KOSPI and KOSDAQ and concatenate.
     let params = [
         ("mktId", "STK"),
         ("trdDd", "20220103"),
@@ -177,4 +178,9 @@ pub async fn get_krx_ind() -> impl IntoResponse {
         read_post_raw(DOWNLOAD_URL, &[("code", &download_code)], headers, &client).await?;
     // FIXME: This stops when the column length changes.
     write_csv("./krx_ind.csv", &csv_result)
+}
+
+const NAVER_SISE_DEPOSIT_URL: &'static str = "https://finance.naver.com/sise/sise_deposit.naver";
+pub async fn get_biz_day() -> impl IntoResponse {
+    let x_path = "/html/body/div[3]/div[2]/div[2]/div[1]/div[2]/div[1]/div/ul[2]/li/span";
 }

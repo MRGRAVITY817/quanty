@@ -15,3 +15,6 @@ http://localhost:3000/industry
 
 ### Get individual field
 http://localhost:3000/individual
+
+### Get Chart Data 
+http://localhost:3000/chart

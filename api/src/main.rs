@@ -6,6 +6,8 @@ use std::net::SocketAddr;
 
 use axum::{response::Html, routing::get, Router};
 
+use crate::handlers::data;
+
 #[tokio::main]
 async fn main() {
     let app = Router::new()
@@ -14,7 +16,8 @@ async fn main() {
         .route("/disclosure", get(news::get_today_disclosure))
         .route("/ticker", get(news::get_ticker))
         .route("/industry", get(news::get_krx_sector))
-        .route("/individual", get(news::get_krx_ind));
+        .route("/individual", get(news::get_krx_ind))
+        .route("/chart", get(data::get_chart_data));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!("listening on {}", addr);
