@@ -4,7 +4,11 @@ mod utils;
 use handlers::news;
 use std::net::SocketAddr;
 
-use axum::{response::Html, routing::get, Router};
+use axum::{
+    response::Html,
+    routing::{get, post},
+    Router,
+};
 
 use crate::handlers::data;
 
@@ -17,7 +21,7 @@ async fn main() {
         .route("/ticker", get(news::get_ticker))
         .route("/industry", get(news::get_krx_sector))
         .route("/individual", get(news::get_krx_ind))
-        .route("/chart", get(data::get_chart_data));
+        .route("/chart", post(data::get_chart_data));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!("listening on {}", addr);

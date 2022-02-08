@@ -17,4 +17,11 @@ http://localhost:3000/industry
 http://localhost:3000/individual
 
 ### Get Chart Data 
-http://localhost:3000/chart
+POST http://localhost:3000/chart HTTP/1.1
+content-type: application/json
+
+{
+	"symbol": "005930",
+	"from": "20190101",
+	"to": "20220101"
+}
